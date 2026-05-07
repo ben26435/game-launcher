@@ -35,19 +35,17 @@ LAUNCH_WAIT = 60
 # 每個啟動畫面按鈕的最長等待秒數
 SCREEN_TIMEOUT = 30
 # 圖像辨識信心值
-CONFIDENCE = 0.7
-
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 # 各遊戲的啟動畫面按鈕，依序點擊直到進入主選單
-# 每個 tuple：(圖片路徑, 說明, optional)
+# 每個 tuple：(圖片路徑, 說明, optional, 信心值)
 GENSHIN_SCREENS = [
-    (ASSETS_DIR / "genshin" / "start_enter.png",   "第一次點擊進入（標題畫面）", False),
-    (ASSETS_DIR / "genshin" / "start_enter_2.png", "第二次點擊進入",            False),
+    (ASSETS_DIR / "genshin" / "start_enter.png",   "第一次點擊進入（標題畫面）", False, 0.8),
+    (ASSETS_DIR / "genshin" / "start_enter_2.png", "第二次點擊進入",            False, 0.7),
 ]
 STARRAIL_SCREENS = [
-    (ASSETS_DIR / "starrail" / "start_enter.png",   "第一次點擊進入（標題畫面）", False),
-    (ASSETS_DIR / "starrail" / "start_enter_2.png", "第二次點擊進入",            False),
+    (ASSETS_DIR / "starrail" / "start_enter.png",   "第一次點擊進入（標題畫面）", False, 0.8),
+    (ASSETS_DIR / "starrail" / "start_enter_2.png", "第二次點擊進入",            False, 0.8),
 ]
 
 
@@ -118,7 +116,7 @@ def setup_game(game_name: str, exe_path: str, window_titles: list[str], screens:
         return
     print(f"  遊戲已開啟，請等待畫面載入後依提示操作。")
 
-    for path, description, optional in screens:
+    for path, description, optional, _ in screens:
         path.parent.mkdir(parents=True, exist_ok=True)
         tag = "（可選）" if optional else "（必要）"
 
@@ -168,12 +166,12 @@ def wait_for_window(titles: list[str], timeout: int = 60) -> object | None:
     return None
 
 
-def find_and_click(image_path: Path, timeout: int = SCREEN_TIMEOUT) -> bool:
+def find_and_click(image_path: Path, confidence: float, timeout: int = SCREEN_TIMEOUT) -> bool:
     """持續掃描螢幕，找到圖片後點擊，回傳是否成功。"""
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            loc = pyautogui.locateCenterOnScreen(str(image_path), confidence=CONFIDENCE)
+            loc = pyautogui.locateCenterOnScreen(str(image_path), confidence=confidence)
             if loc:
                 pyautogui.click(loc)
                 return True
@@ -185,7 +183,7 @@ def find_and_click(image_path: Path, timeout: int = SCREEN_TIMEOUT) -> bool:
 
 def click_through_screens(window, screens: list):
     """依序等待並點擊各啟動畫面的按鈕。"""
-    for path, description, optional in screens:
+    for path, description, optional, confidence in screens:
         if not path.exists():
             if not optional:
                 print(f"  [警告] 缺少參考圖「{description}」，請執行 --setup 設定")
@@ -199,7 +197,7 @@ def click_through_screens(window, screens: list):
             pass
 
         print(f"  等待畫面：{description}...")
-        if find_and_click(path):
+        if find_and_click(path, confidence):
             print(f"  已點擊：{description}")
             time.sleep(2)
         else:
@@ -225,7 +223,7 @@ def launch_game(name: str, exe_path: str, window_titles: list[str], screens: lis
 
 
 def check_missing_required(screens: list, game_name: str) -> bool:
-    missing = [desc for path, desc, optional in screens if not optional and not path.exists()]
+    missing = [desc for path, desc, optional, _ in screens if not optional and not path.exists()]
     if missing:
         print(f"[{game_name}] 缺少以下參考圖，請執行 --setup：")
         for m in missing:

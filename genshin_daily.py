@@ -125,15 +125,20 @@ def run_setup():
 
 # ── 領取邏輯 ──────────────────────────────────────────────────
 
-def find_and_click(image_path: Path, timeout: int = 8) -> bool:
-    """在螢幕上找到指定圖片並點擊，找不到回傳 False。
+def get_window_region(window) -> tuple:
+    """回傳視窗所在螢幕區域 (left, top, width, height)，支援多螢幕。"""
+    return (window.left, window.top, window.width, window.height)
+
+
+def find_and_click(image_path: Path, region: tuple, timeout: int = 8) -> bool:
+    """在指定螢幕區域內搜尋圖片並點擊，支援多螢幕。
     原神需要按住 ALT 才能釋放游標，點擊前後自動處理。
     """
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
             pyautogui.keyDown("alt")
-            loc = pyautogui.locateCenterOnScreen(str(image_path), confidence=CONFIDENCE)
+            loc = pyautogui.locateCenterOnScreen(str(image_path), confidence=CONFIDENCE, region=region)
             if loc:
                 pyautogui.click(loc)
                 pyautogui.keyUp("alt")
@@ -146,15 +151,15 @@ def find_and_click(image_path: Path, timeout: int = 8) -> bool:
     return False
 
 
-def claim_battle_pass():
+def claim_battle_pass(region: tuple):
     print("\n[紀行] 開啟紀行頁面...")
-    if not find_and_click(TARGETS["battle_pass_icon"][0]):
+    if not find_and_click(TARGETS["battle_pass_icon"][0], region):
         print("  [失敗] 找不到紀行圖示，請確認主畫面可見")
         return
     time.sleep(2)
 
     print("[紀行] 一鍵領取每日任務...")
-    if find_and_click(TARGETS["battle_pass_claim"][0]):
+    if find_and_click(TARGETS["battle_pass_claim"][0], region):
         print("  領取成功")
         time.sleep(1.5)
     else:
@@ -165,9 +170,9 @@ def claim_battle_pass():
     time.sleep(1)
 
 
-def claim_mail():
+def claim_mail(region: tuple):
     print("\n[信件] 開啟信件...")
-    if not find_and_click(TARGETS["mail_icon"][0]):
+    if not find_and_click(TARGETS["mail_icon"][0], region):
         print("  [失敗] 找不到信件圖示，請確認主畫面可見")
         return
     time.sleep(2)
@@ -176,10 +181,10 @@ def claim_mail():
     claim_path = TARGETS["mail_claim_all"][0]
     if not claim_path.exists():
         print("  [跳過] 尚未設定「全部領取」參考圖，請有信件時執行 --setup 補上")
-    elif find_and_click(claim_path):
+    elif find_and_click(claim_path, region):
         print("  領取成功")
         time.sleep(1.5)
-        find_and_click(TARGETS["mail_confirm"][0], timeout=3)
+        find_and_click(TARGETS["mail_confirm"][0], region, timeout=3)
         time.sleep(1)
     else:
         print("  [跳過] 找不到全部領取按鈕（可能無未讀信件）")
@@ -203,15 +208,17 @@ def run_daily():
         print("[錯誤] 找不到原神視窗，請先開啟遊戲並登入到主畫面")
         return
 
+    window = windows[0]
     print("聚焦原神視窗...")
-    windows[0].activate()
+    window.activate()
     time.sleep(1.5)
+    region = get_window_region(window)
 
     pyautogui.FAILSAFE = True
     print("提示：滑鼠移到左上角可緊急停止\n")
 
-    claim_battle_pass()
-    claim_mail()
+    claim_battle_pass(region)
+    claim_mail(region)
 
     print("\n每日領取完成！")
 

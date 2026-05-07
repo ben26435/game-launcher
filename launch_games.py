@@ -166,12 +166,17 @@ def wait_for_window(titles: list[str], timeout: int = 60) -> object | None:
     return None
 
 
-def find_and_click(image_path: Path, confidence: float, timeout: int = SCREEN_TIMEOUT) -> bool:
-    """持續掃描螢幕，找到圖片後點擊，回傳是否成功。"""
+def get_window_region(window) -> tuple:
+    """回傳視窗所在螢幕區域 (left, top, width, height)，供 locateCenterOnScreen 使用。"""
+    return (window.left, window.top, window.width, window.height)
+
+
+def find_and_click(image_path: Path, confidence: float, region: tuple, timeout: int = SCREEN_TIMEOUT) -> bool:
+    """在指定螢幕區域內搜尋圖片並點擊，支援多螢幕。"""
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            loc = pyautogui.locateCenterOnScreen(str(image_path), confidence=confidence)
+            loc = pyautogui.locateCenterOnScreen(str(image_path), confidence=confidence, region=region)
             if loc:
                 pyautogui.click(loc)
                 return True
@@ -189,15 +194,15 @@ def click_through_screens(window, screens: list):
                 print(f"  [警告] 缺少參考圖「{description}」，請執行 --setup 設定")
             continue
 
-        # 每次辨識前重新聚焦視窗，確保畫面在最前面
         try:
             window.activate()
             time.sleep(0.5)
         except Exception:
             pass
 
+        region = get_window_region(window)
         print(f"  等待畫面：{description}...")
-        if find_and_click(path, confidence):
+        if find_and_click(path, confidence, region):
             print(f"  已點擊：{description}")
             time.sleep(2)
         else:

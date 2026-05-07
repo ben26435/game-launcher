@@ -42,10 +42,12 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 # 各遊戲的啟動畫面按鈕，依序點擊直到進入主選單
 # 每個 tuple：(圖片路徑, 說明, optional)
 GENSHIN_SCREENS = [
-    (ASSETS_DIR / "genshin" / "start_enter.png",  "點擊進入（標題畫面）", False),
+    (ASSETS_DIR / "genshin" / "start_enter.png",   "第一次點擊進入（標題畫面）", False),
+    (ASSETS_DIR / "genshin" / "start_enter_2.png", "第二次點擊進入",            False),
 ]
 STARRAIL_SCREENS = [
-    (ASSETS_DIR / "starrail" / "start_enter.png", "點擊進入（標題畫面）", False),
+    (ASSETS_DIR / "starrail" / "start_enter.png",   "第一次點擊進入（標題畫面）", False),
+    (ASSETS_DIR / "starrail" / "start_enter_2.png", "第二次點擊進入",            False),
 ]
 
 

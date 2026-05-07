@@ -24,13 +24,13 @@ except ImportError:
 ASSETS_DIR = Path(__file__).parent / "assets" / "genshin"
 CONFIDENCE = 0.8
 
-# 各按鈕的參考圖片路徑
+# 各按鈕的參考圖片路徑，optional=True 表示缺少時不阻止腳本執行
 TARGETS = {
-    "battle_pass_icon":  (ASSETS_DIR / "battle_pass_icon.png",  "紀行（任務日誌）圖示"),
-    "battle_pass_claim": (ASSETS_DIR / "battle_pass_claim.png", "紀行頁面的「一鍵領取」按鈕"),
-    "mail_icon":         (ASSETS_DIR / "mail_icon.png",         "信件圖示"),
-    "mail_claim_all":    (ASSETS_DIR / "mail_claim_all.png",    "信件頁面的「全部領取」按鈕"),
-    "mail_confirm":      (ASSETS_DIR / "mail_confirm.png",      "領取後的「確定」按鈕（可選）"),
+    "battle_pass_icon":  (ASSETS_DIR / "battle_pass_icon.png",  "紀行（任務日誌）圖示",        False),
+    "battle_pass_claim": (ASSETS_DIR / "battle_pass_claim.png", "紀行頁面的「一鍵領取」按鈕",  False),
+    "mail_icon":         (ASSETS_DIR / "mail_icon.png",         "信件圖示",                    False),
+    "mail_claim_all":    (ASSETS_DIR / "mail_claim_all.png",    "信件頁面的「全部領取」按鈕",  True),
+    "mail_confirm":      (ASSETS_DIR / "mail_confirm.png",      "領取後的「確定」按鈕",        True),
 }
 
 
@@ -95,10 +95,17 @@ def run_setup():
     print("請先開啟原神並進入主畫面，設定過程中請切換回遊戲視窗。")
     print("每個步驟會截取當前螢幕，讓你用滑鼠拖曳框選對應按鈕。\n")
 
-    for key, (path, description) in TARGETS.items():
+    for key, (path, description, optional) in TARGETS.items():
+        tag = "（可選）" if optional else "（必要）"
         if path.exists():
-            ans = input(f"  [{description}] 已有參考圖，重新擷取？(y/N) ").strip().lower()
+            ans = input(f"  [{description}]{tag} 已有參考圖，重新擷取？(y/N) ").strip().lower()
             if ans != "y":
+                continue
+
+        if optional:
+            ans = input(f"\n{tag} 「{description}」—— 現在畫面上看得到嗎？(y/N) ").strip().lower()
+            if ans != "y":
+                print(f"  已跳過，之後有信件時可重新執行 --setup 補上。")
                 continue
 
         input(f"\n步驟：請在遊戲中找到「{description}」，讓它顯示在畫面上，\n然後回到這裡按 Enter 開始截圖...")
@@ -159,10 +166,12 @@ def claim_mail():
     time.sleep(2)
 
     print("[信件] 全部領取...")
-    if find_and_click(TARGETS["mail_claim_all"][0]):
+    claim_path = TARGETS["mail_claim_all"][0]
+    if not claim_path.exists():
+        print("  [跳過] 尚未設定「全部領取」參考圖，請有信件時執行 --setup 補上")
+    elif find_and_click(claim_path):
         print("  領取成功")
         time.sleep(1.5)
-        # 嘗試點確定（有些信件領取後有確認視窗）
         find_and_click(TARGETS["mail_confirm"][0], timeout=3)
         time.sleep(1)
     else:
@@ -173,8 +182,8 @@ def claim_mail():
 
 
 def run_daily():
-    missing = [desc for key, (path, desc) in TARGETS.items()
-               if key != "mail_confirm" and not path.exists()]
+    missing = [desc for key, (path, desc, optional) in TARGETS.items()
+               if not optional and not path.exists()]
     if missing:
         print("缺少以下參考圖片，請先執行：python genshin_daily.py --setup")
         for m in missing:

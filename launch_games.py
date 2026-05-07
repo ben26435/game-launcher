@@ -35,7 +35,7 @@ LAUNCH_WAIT = 60
 # 每個啟動畫面按鈕的最長等待秒數
 SCREEN_TIMEOUT = 30
 # 圖像辨識信心值
-CONFIDENCE = 0.8
+CONFIDENCE = 0.7
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -185,17 +185,18 @@ def find_and_click(image_path: Path, timeout: int = SCREEN_TIMEOUT) -> bool:
 
 def click_through_screens(window, screens: list):
     """依序等待並點擊各啟動畫面的按鈕。"""
-    try:
-        window.activate()
-        time.sleep(1)
-    except Exception:
-        pass
-
     for path, description, optional in screens:
         if not path.exists():
             if not optional:
                 print(f"  [警告] 缺少參考圖「{description}」，請執行 --setup 設定")
             continue
+
+        # 每次辨識前重新聚焦視窗，確保畫面在最前面
+        try:
+            window.activate()
+            time.sleep(0.5)
+        except Exception:
+            pass
 
         print(f"  等待畫面：{description}...")
         if find_and_click(path):

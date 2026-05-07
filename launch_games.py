@@ -266,7 +266,7 @@ def main():
         return
 
     launch_game("原神 Genshin Impact",              GENSHIN_EXE,  GENSHIN_WINDOW_TITLES,  GENSHIN_SCREENS,  use_alt=True)
-    launch_game("崩壞：星穹鐵道 Honkai: Star Rail", STARRAIL_EXE, STARRAIL_WINDOW_TITLES, STARRAIL_SCREENS, use_alt=False)
+    launch_game("崩壞：星穹鐵道 Honkai: Star Rail", STARRAIL_EXE, STARRAIL_WINDOW_TITLES, STARRAIL_SCREENS, use_alt=True)
 
     print("\n全部完成！")
 

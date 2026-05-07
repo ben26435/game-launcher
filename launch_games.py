@@ -17,7 +17,7 @@ from pathlib import Path
 try:
     import pyautogui
     import pygetwindow as gw
-    from PIL import Image, ImageTk
+    from PIL import Image, ImageGrab, ImageTk
 except ImportError:
     print("缺少必要套件，請先執行：pip install pyautogui pygetwindow opencv-python Pillow")
     sys.exit(1)
@@ -172,13 +172,15 @@ def get_window_region(window) -> tuple:
 
 
 def find_and_click(image_path: Path, confidence: float, region: tuple, timeout: int = SCREEN_TIMEOUT) -> bool:
-    """在指定螢幕區域內搜尋圖片並點擊，支援多螢幕。"""
+    """截取全部螢幕後在視窗區域內搜尋圖片並點擊，支援多螢幕。"""
+    needle = Image.open(str(image_path))
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            loc = pyautogui.locateCenterOnScreen(str(image_path), confidence=confidence, region=region)
+            screenshot = ImageGrab.grab(all_screens=True)
+            loc = pyautogui.locate(needle, screenshot, confidence=confidence, region=region)
             if loc:
-                pyautogui.click(loc)
+                pyautogui.click(pyautogui.center(loc))
                 return True
         except Exception:
             pass

@@ -103,10 +103,18 @@ def select_region_on_screenshot(screenshot: Image.Image, prompt: str) -> Image.I
     return result[0] if result else None
 
 
-def setup_game(game_name: str, screens: list):
+def setup_game(game_name: str, exe_path: str, window_titles: list[str], screens: list):
     print(f"\n{'='*40}")
     print(f"設定：{game_name}")
-    print("請先啟動遊戲，讓畫面停在需要截圖的位置，再回到這裡操作。")
+
+    print(f"  啟動遊戲中...")
+    subprocess.Popen([exe_path])
+
+    window = wait_for_window(window_titles, timeout=LAUNCH_WAIT)
+    if window is None:
+        print(f"  [警告] 找不到 {game_name} 視窗，請手動開啟後重試。")
+        return
+    print(f"  遊戲已開啟，請等待畫面載入後依提示操作。")
 
     for path, description, optional in screens:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -139,8 +147,8 @@ def setup_game(game_name: str, screens: list):
 def run_setup():
     print("=== 設定模式 ===")
     print("將逐一引導你截圖各遊戲的啟動畫面按鈕。\n")
-    setup_game("原神 Genshin Impact", GENSHIN_SCREENS)
-    setup_game("崩壞：星穹鐵道 Honkai: Star Rail", STARRAIL_SCREENS)
+    setup_game("原神 Genshin Impact",              GENSHIN_EXE,  GENSHIN_WINDOW_TITLES,  GENSHIN_SCREENS)
+    setup_game("崩壞：星穹鐵道 Honkai: Star Rail", STARRAIL_EXE, STARRAIL_WINDOW_TITLES, STARRAIL_SCREENS)
     print("\n設定完成！執行 python launch_games.py 開始自動啟動。")
 
 

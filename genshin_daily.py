@@ -126,16 +126,22 @@ def run_setup():
 # ── 領取邏輯 ──────────────────────────────────────────────────
 
 def find_and_click(image_path: Path, timeout: int = 8) -> bool:
-    """在螢幕上找到指定圖片並點擊，找不到回傳 False。"""
+    """在螢幕上找到指定圖片並點擊，找不到回傳 False。
+    原神需要按住 ALT 才能釋放游標，點擊前後自動處理。
+    """
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
+            pyautogui.keyDown("alt")
             loc = pyautogui.locateCenterOnScreen(str(image_path), confidence=CONFIDENCE)
             if loc:
                 pyautogui.click(loc)
+                pyautogui.keyUp("alt")
                 return True
         except Exception:
             pass
+        finally:
+            pyautogui.keyUp("alt")
         time.sleep(0.5)
     return False
 
@@ -154,6 +160,7 @@ def claim_battle_pass():
     else:
         print("  [跳過] 找不到一鍵領取按鈕（可能今日已領取或尚未完成任務）")
 
+    pyautogui.keyUp("alt")
     pyautogui.press("escape")
     time.sleep(1)
 
@@ -177,6 +184,7 @@ def claim_mail():
     else:
         print("  [跳過] 找不到全部領取按鈕（可能無未讀信件）")
 
+    pyautogui.keyUp("alt")
     pyautogui.press("escape")
     time.sleep(1)
 

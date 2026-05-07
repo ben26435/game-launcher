@@ -171,12 +171,16 @@ def get_window_region(window) -> tuple:
     return (window.left, window.top, window.width, window.height)
 
 
-def find_and_click(image_path: Path, confidence: float, region: tuple, timeout: int = SCREEN_TIMEOUT, clicks: int = 3) -> bool:
-    """截取全部螢幕後在視窗區域內搜尋圖片並點擊，支援多螢幕。"""
+def find_and_click(image_path: Path, confidence: float, region: tuple, use_alt: bool = False, timeout: int = SCREEN_TIMEOUT, clicks: int = 3) -> bool:
+    """截取全部螢幕後在視窗區域內搜尋圖片並點擊，支援多螢幕。
+    use_alt=True 時點擊前後按住 ALT，用於原神等搶走滑鼠焦點的遊戲。
+    """
     needle = Image.open(str(image_path))
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
+            if use_alt:
+                pyautogui.keyDown("alt")
             screenshot = ImageGrab.grab(all_screens=True)
             loc = pyautogui.locate(needle, screenshot, confidence=confidence, region=region)
             if loc:
@@ -187,11 +191,14 @@ def find_and_click(image_path: Path, confidence: float, region: tuple, timeout: 
                 return True
         except Exception:
             pass
+        finally:
+            if use_alt:
+                pyautogui.keyUp("alt")
         time.sleep(1)
     return False
 
 
-def click_through_screens(window, screens: list):
+def click_through_screens(window, screens: list, use_alt: bool = False):
     """依序等待並點擊各啟動畫面的按鈕。"""
     for path, description, optional, confidence in screens:
         if not path.exists():
@@ -207,15 +214,19 @@ def click_through_screens(window, screens: list):
 
         region = get_window_region(window)
         print(f"  等待畫面：{description}...")
-        if find_and_click(path, confidence, region):
+        if find_and_click(path, confidence, region, use_alt=use_alt):
             print(f"  已點擊：{description}")
             time.sleep(2)
         else:
             if not optional:
                 print(f"  [逾時] 找不到「{description}」，可能已通過或畫面不同")
 
+    # 結束後釋放 ALT，避免影響下一個遊戲的操作
+    if use_alt:
+        pyautogui.keyUp("alt")
 
-def launch_game(name: str, exe_path: str, window_titles: list[str], screens: list):
+
+def launch_game(name: str, exe_path: str, window_titles: list[str], screens: list, use_alt: bool = False):
     print(f"\n{'='*40}")
     print(f"啟動：{name}")
 
@@ -228,7 +239,7 @@ def launch_game(name: str, exe_path: str, window_titles: list[str], screens: lis
         return
 
     print(f"  找到視窗，開始辨識啟動畫面...")
-    click_through_screens(window, screens)
+    click_through_screens(window, screens, use_alt=use_alt)
     print(f"  {name} 完成！")
 
 
@@ -254,8 +265,8 @@ def main():
         print("\n請先執行：python launch_games.py --setup")
         return
 
-    launch_game("原神 Genshin Impact",              GENSHIN_EXE,  GENSHIN_WINDOW_TITLES,  GENSHIN_SCREENS)
-    launch_game("崩壞：星穹鐵道 Honkai: Star Rail", STARRAIL_EXE, STARRAIL_WINDOW_TITLES, STARRAIL_SCREENS)
+    launch_game("原神 Genshin Impact",              GENSHIN_EXE,  GENSHIN_WINDOW_TITLES,  GENSHIN_SCREENS,  use_alt=True)
+    launch_game("崩壞：星穹鐵道 Honkai: Star Rail", STARRAIL_EXE, STARRAIL_WINDOW_TITLES, STARRAIL_SCREENS, use_alt=False)
 
     print("\n全部完成！")
 

@@ -130,7 +130,7 @@ def get_window_region(window) -> tuple:
     return (window.left, window.top, window.width, window.height)
 
 
-def find_and_click(image_path: Path, region: tuple, timeout: int = 8) -> bool:
+def find_and_click(image_path: Path, region: tuple, timeout: int = 8, clicks: int = 3) -> bool:
     """截取全部螢幕後在視窗區域內搜尋圖片並點擊，支援多螢幕。
     原神需要按住 ALT 才能釋放游標，點擊前後自動處理。
     """
@@ -142,7 +142,10 @@ def find_and_click(image_path: Path, region: tuple, timeout: int = 8) -> bool:
             screenshot = ImageGrab.grab(all_screens=True)
             loc = pyautogui.locate(needle, screenshot, confidence=CONFIDENCE, region=region)
             if loc:
-                pyautogui.click(pyautogui.center(loc))
+                center = pyautogui.center(loc)
+                for _ in range(clicks):
+                    pyautogui.click(center)
+                    time.sleep(0.3)
                 pyautogui.keyUp("alt")
                 return True
         except Exception:

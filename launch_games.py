@@ -171,7 +171,7 @@ def get_window_region(window) -> tuple:
     return (window.left, window.top, window.width, window.height)
 
 
-def find_and_click(image_path: Path, confidence: float, region: tuple, timeout: int = SCREEN_TIMEOUT) -> bool:
+def find_and_click(image_path: Path, confidence: float, region: tuple, timeout: int = SCREEN_TIMEOUT, clicks: int = 3) -> bool:
     """截取全部螢幕後在視窗區域內搜尋圖片並點擊，支援多螢幕。"""
     needle = Image.open(str(image_path))
     deadline = time.time() + timeout
@@ -180,7 +180,10 @@ def find_and_click(image_path: Path, confidence: float, region: tuple, timeout: 
             screenshot = ImageGrab.grab(all_screens=True)
             loc = pyautogui.locate(needle, screenshot, confidence=confidence, region=region)
             if loc:
-                pyautogui.click(pyautogui.center(loc))
+                center = pyautogui.center(loc)
+                for _ in range(clicks):
+                    pyautogui.click(center)
+                    time.sleep(0.3)
                 return True
         except Exception:
             pass
